@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">AI Camera</string>
+    <string name="capture">Capture</string>
+    <string name="settings">Settings</string>
+    <string name="auto_enhance">Auto Enhance</string>
+    <string name="ai_edit">AI Edit</string>
+    <string name="save">Save</string>
+    <string name="flash">Flash</string>
+    <string name="hdr">HDR</string>
+    <string name="grid">Grid</string>
+    <string name="timer">Timer</string>
+    <string name="switch_camera">Switch Camera</string>
+    <string name="ai_provider">AI Provider</string>
+    <string name="api_key">API Key</string>
+    <string name="custom_endpoint">Custom Endpoint URL</string>
+    <string name="use_free_tier">Use free option (no key needed where available)</string>
+    <string name="enable_ai_edit">Enable AI Edit over network</string>
+</resources>
