@@ -2,7 +2,6 @@ package com.aicamera.app
 
 import android.graphics.BitmapFactory
 import android.os.Bundle
-import android.os.Environment
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -10,10 +9,9 @@ import com.aicamera.app.ai.AIEditResult
 import com.aicamera.app.ai.AIEnhanceClient
 import com.aicamera.app.ai.AISettings
 import com.aicamera.app.databinding.ActivityPreviewBinding
+import com.aicamera.app.util.GalleryStore
 import com.aicamera.app.util.ImageEnhancer
 import kotlinx.coroutines.launch
-import java.io.File
-import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -84,13 +82,13 @@ class PhotoPreviewActivity : AppCompatActivity() {
     }
 
     private fun savePhoto(bitmap: android.graphics.Bitmap) {
-        val dir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
         val name = "AI_" + SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date()) + ".jpg"
-        val file = File(dir, name)
-        FileOutputStream(file).use { out ->
-            bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 95, out)
+        val uri = GalleryStore.saveBitmap(this, bitmap, name)
+        if (uri != null) {
+            Toast.makeText(this, "Saved to Gallery: Pictures/AICamera/$name", Toast.LENGTH_LONG).show()
+        } else {
+            Toast.makeText(this, "Could not save photo", Toast.LENGTH_LONG).show()
         }
-        Toast.makeText(this, "Saved: ${file.absolutePath}", Toast.LENGTH_LONG).show()
         finish()
     }
 

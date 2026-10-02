@@ -25,62 +25,71 @@
         app:layout_constraintStart_toStartOf="@id/previewView"
         app:layout_constraintEnd_toEndOf="@id/previewView" />
 
-    <LinearLayout
-        android:id="@+id/topBar"
+    <!-- Settings is ALWAYS fixed top-right so it can never be pushed off-screen -->
+    <ImageButton
+        android:id="@+id/btnSettings"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_margin="8dp"
+        android:background="@color/overlay"
+        android:src="@android:drawable/ic_menu_preferences"
+        android:contentDescription="@string/settings"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Scrollable row for flash/hdr/grid/timer so it never overlaps Settings -->
+    <HorizontalScrollView
+        android:id="@+id/topScroll"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
         android:background="@color/overlay"
-        android:padding="12dp"
+        android:scrollbars="none"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintEnd_toStartOf="@id/btnSettings"
+        app:layout_constraintBottom_toBottomOf="@id/btnSettings">
 
-        <ImageButton
-            android:id="@+id/btnFlash"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@android:color/transparent"
-            android:src="@android:drawable/ic_menu_camera"
-            android:contentDescription="@string/flash" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="4dp">
 
-        <ToggleButton
-            android:id="@+id/btnHdr"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textOn="HDR On"
-            android:textOff="HDR Off"
-            android:layout_marginStart="8dp" />
+            <ImageButton
+                android:id="@+id/btnFlash"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@android:color/transparent"
+                android:src="@android:drawable/ic_menu_camera"
+                android:contentDescription="@string/flash" />
 
-        <ToggleButton
-            android:id="@+id/btnGrid"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textOn="Grid On"
-            android:textOff="Grid Off"
-            android:layout_marginStart="8dp" />
+            <ToggleButton
+                android:id="@+id/btnHdr"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textOn="HDR On"
+                android:textOff="HDR Off"
+                android:layout_marginStart="8dp" />
 
-        <Spinner
-            android:id="@+id/timerSpinner"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp" />
+            <ToggleButton
+                android:id="@+id/btnGrid"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textOn="Grid On"
+                android:textOff="Grid Off"
+                android:layout_marginStart="8dp" />
 
-        <View
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_weight="1" />
+            <Spinner
+                android:id="@+id/timerSpinner"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp" />
+        </LinearLayout>
+    </HorizontalScrollView>
 
-        <ImageButton
-            android:id="@+id/btnSettings"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@android:color/transparent"
-            android:src="@android:drawable/ic_menu_preferences"
-            android:contentDescription="@string/settings" />
-    </LinearLayout>
-
+    <!-- Zoom slider -->
     <SeekBar
         android:id="@+id/zoomSeekBar"
         android:layout_width="0dp"
@@ -91,6 +100,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <!-- Bottom bar: switch camera, capture, thumbnail -->
     <LinearLayout
         android:id="@+id/bottomBar"
         android:layout_width="0dp"
@@ -108,7 +118,8 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="@color/white"
-            android:scaleType="centerCrop" />
+            android:scaleType="centerCrop"
+            android:contentDescription="@string/last_photo" />
 
         <View
             android:layout_width="0dp"

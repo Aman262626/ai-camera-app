@@ -15,4 +15,5 @@
     <string name="custom_endpoint">Custom Endpoint URL</string>
     <string name="use_free_tier">Use free option (no key needed where available)</string>
     <string name="enable_ai_edit">Enable AI Edit over network</string>
+    <string name="last_photo">Last photo</string>
 </resources>

@@ -3,11 +3,15 @@ package com.aicamera.app
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.drawable.ShapeDrawable
 import android.graphics.drawable.shapes.RectShape
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -21,6 +25,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.aicamera.app.databinding.ActivityMainBinding
+import com.aicamera.app.util.GalleryStore
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -36,6 +41,7 @@ class MainActivity : AppCompatActivity() {
     private var lensFacing = CameraSelector.LENS_FACING_BACK
     private var flashMode = ImageCapture.FLASH_MODE_OFF
     private var timerSeconds = 0
+    private var lastPhotoPath: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,10 +52,10 @@ class MainActivity : AppCompatActivity() {
         setupTimerSpinner()
         setupGridOverlay()
 
-        if (hasCameraPermission()) {
+        if (hasRequiredPermissions()) {
             startCamera()
         } else {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), REQUEST_CODE_PERMISSIONS)
+            ActivityCompat.requestPermissions(this, requiredPermissions(), REQUEST_CODE_PERMISSIONS)
         }
 
         binding.btnCapture.setOnClickListener { onCaptureClicked() }
@@ -67,6 +73,9 @@ class MainActivity : AppCompatActivity() {
         }
         binding.btnSettings.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
+        }
+        binding.thumbnail.setOnClickListener {
+            lastPhotoPath?.let { path -> openPreview(path) }
         }
 
         binding.zoomSeekBar.max = 100
@@ -113,8 +122,18 @@ class MainActivity : AppCompatActivity() {
         binding.gridOverlay.background = drawable
     }
 
-    private fun hasCameraPermission() =
-        ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+    private fun requiredPermissions(): Array<String> {
+        return if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+            arrayOf(Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        } else {
+            arrayOf(Manifest.permission.CAMERA)
+        }
+    }
+
+    private fun hasRequiredPermissions() =
+        requiredPermissions().all {
+            ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
+        }
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
@@ -122,10 +141,10 @@ class MainActivity : AppCompatActivity() {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_CODE_PERMISSIONS && hasCameraPermission()) {
+        if (requestCode == REQUEST_CODE_PERMISSIONS && hasRequiredPermissions()) {
             startCamera()
         } else if (requestCode == REQUEST_CODE_PERMISSIONS) {
-            Toast.makeText(this, "Camera permission is required", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Camera (and storage) permission is required", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -191,9 +210,9 @@ class MainActivity : AppCompatActivity() {
     private fun takePhoto() {
         val imageCapture = imageCapture ?: return
         val name = "IMG_" + SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(java.util.Date()) + ".jpg"
-        val dir = getExternalFilesDir(android.os.Environment.DIRECTORY_PICTURES)
-        val photoFile = File(dir, name)
-        val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
+        // Capture to a private cache file first (used to feed the preview/editor).
+        val tempFile = File(cacheDir, name)
+        val outputOptions = ImageCapture.OutputFileOptions.Builder(tempFile).build()
 
         imageCapture.takePicture(
             outputOptions,
@@ -205,12 +224,34 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                    val intent = Intent(this@MainActivity, PhotoPreviewActivity::class.java)
-                    intent.putExtra(PhotoPreviewActivity.EXTRA_PHOTO_PATH, photoFile.absolutePath)
-                    startActivity(intent)
+                    // Immediately publish the original shot to the public Gallery,
+                    // exactly like the stock camera app does.
+                    cameraExecutor.execute {
+                        val bitmap = BitmapFactory.decodeFile(tempFile.absolutePath)
+                        if (bitmap != null) {
+                            GalleryStore.saveBitmap(this@MainActivity, bitmap, name)
+                        }
+                        runOnUiThread {
+                            lastPhotoPath = tempFile.absolutePath
+                            updateThumbnail(tempFile.absolutePath)
+                            openPreview(tempFile.absolutePath)
+                        }
+                    }
                 }
             }
         )
+    }
+
+    private fun updateThumbnail(path: String) {
+        val options = BitmapFactory.Options().apply { inSampleSize = 4 }
+        val small = BitmapFactory.decodeFile(path, options)
+        if (small != null) binding.thumbnail.setImageBitmap(small)
+    }
+
+    private fun openPreview(path: String) {
+        val intent = Intent(this, PhotoPreviewActivity::class.java)
+        intent.putExtra(PhotoPreviewActivity.EXTRA_PHOTO_PATH, path)
+        startActivity(intent)
     }
 
     override fun onDestroy() {
